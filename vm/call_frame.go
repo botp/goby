@@ -124,10 +124,10 @@ func (b *baseFrame) FileName() string {
 func (b *baseFrame) getLCL(index, depth int) *Pointer {
 	if depth == 0 {
 		b.RLock()
+		local := b.locals[index]
+		b.RUnlock()
 
-		defer b.RUnlock()
-
-		return b.locals[index]
+		return local
 	}
 
 	return b.blockFrame.ep.getLCL(index, depth-1)
@@ -143,8 +143,6 @@ func (b *baseFrame) insertLCL(index, depth int, value Object) {
 
 	b.Lock()
 
-	defer b.Unlock()
-
 	b.locals = append(b.locals, nil)
 	copy(b.locals[index:], b.locals[index:])
 	b.locals[index] = &Pointer{Target: value}
@@ -152,6 +150,8 @@ func (b *baseFrame) insertLCL(index, depth int, value Object) {
 	if index >= b.lPr {
 		b.lPr = index + 1
 	}
+
+	b.Unlock()
 }
 
 func (b *baseFrame) storeConstant(constName string, constant interface{}) *Pointer {
